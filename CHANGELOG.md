@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.0.0...v1.1.0) (2025-04-08)
+
+
+### Features
+
+* add release notes code and workflow ([14f68ce](https://github.com/Ho1yShif/test-release-pipeline/commit/14f68ce977608f6f7fa75f694a64f713d7ebce35))
+
 ## 1.0.0 (2025-04-08)
 
 
