@@ -1,0 +1,127 @@
+# This workflow runs every Thursday at 7 PM PST to:
+# 1. Generate release notes using the summarize_release_notes.py script
+# 2. Create a new branch with the current date
+# 3. Add the generated release notes to the top of whats-new.mdx
+# 4. Create a PR for manual review, tagging @Ho1yShif
+# The workflow can also be triggered manually using the GitHub Actions interface.
+
+name: Weekly Release Notes Update
+
+on:
+  schedule:
+    - cron: '0 3 * * FRI'  # Runs at 7 PM PST Thursday (3 AM UTC Friday)
+  workflow_dispatch: 
+
+jobs:
+  update-release-notes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper git operations
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openai python-dotenv
+
+      - name: Configure Git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+
+      - name: Set Date
+        id: set_date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_REPO: "ascend-io/test-release-pipeline"
+        run: |
+          # Run the summarize_release_notes.py script
+          python3 src/summarize_release_notes.py
+
+          # Check if the expected .mdx files were created and have content
+          if [ ! -s formatted_summary.mdx ] || [ ! -s raw_notes.mdx ]; then
+            echo "::warning::No release notes generated"
+            exit 1
+          fi
+
+          echo "Successfully generated release notes."
+
+      - name: Check if whats-new.mdx exists
+        run: |
+          if [ ! -f whats-new.mdx ]; then
+            echo "::error::whats-new.mdx file not found"
+            exit 1
+          fi
+
+      - name: Create branch and update whats-new.mdx
+        run: |
+          DATE="${{ steps.set_date.outputs.date }}"
+          BRANCH_NAME="release-notes-update-${DATE}"
+
+          # Create and checkout new branch
+          git checkout -b $BRANCH_NAME
+
+          # Read the new content and existing file
+          NEW_CONTENT=$(cat formatted_summary.mdx)
+
+          # Create temp file with new content at top
+          echo "$NEW_CONTENT" > temp_file
+          echo "" >> temp_file
+          cat whats-new.mdx >> temp_file
+
+          # Verify the temp file was created successfully
+          if [ ! -s temp_file ]; then
+            echo "::error::Failed to create temporary file with new content"
+            exit 1
+          fi
+
+          # Replace original file
+          mv temp_file whats-new.mdx
+
+          # Commit changes
+          git add whats-new.mdx
+          if ! git commit -m "Update release notes for week of ${DATE}"; then
+            echo "::error::Failed to commit changes"
+            exit 1
+          fi
+
+          # Push branch
+          if ! git push origin $BRANCH_NAME --force; then
+            echo "::error::Failed to push branch"
+            exit 1
+          fi
+
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.GHA_RELEASE_APP_ID }}
+          private-key: ${{ secrets.GHA_RELEASE_PRIVATE_KEY }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          title: "📝 Update release notes for week of ${{ steps.set_date.outputs.date }}"
+          body: "Weekly automated release notes update. Please review the changes @Ho1yShif."
+          branch: "release-notes-update-${{ steps.set_date.outputs.date }}"
+          base: "main"
+          reviewers: Ho1yShif
