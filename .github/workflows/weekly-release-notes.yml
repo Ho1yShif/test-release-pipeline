@@ -206,8 +206,12 @@ jobs:
             exit 1
           fi
 
+          git status
+
           # Commit changes
           git commit -m "docs: update release notes for week of ${DATE}"
+
+          git status
 
           # Push branch
           git push origin $BRANCH_NAME --force
