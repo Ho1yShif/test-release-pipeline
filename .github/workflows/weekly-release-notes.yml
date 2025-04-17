@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for proper git operations
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
@@ -161,9 +161,6 @@ jobs:
           DATE="${{ steps.generate_notes.outputs.monday_date }}"
           BRANCH_NAME="notes-${DATE}"
 
-          # Create and checkout new branch
-          git checkout -b $BRANCH_NAME
-
           # Debug: print the summary content from file
           echo "FORMATTED_SUMMARY content from file:"
           cat formatted_summary.mdx
@@ -188,32 +185,15 @@ jobs:
           # Replace original file
           mv temp_file whats-new.mdx
 
-          # Remove the temporary summary file so it is not committed
-          rm -f formatted_summary.mdx
-
-          # Debug: show directory and file status before commit
-          ls -l
-          ls -l whats-new.mdx
-          git status
           git diff whats-new.mdx
 
-          # Stage the file (force, in case of .gitignore or other issues)
-          git add -f whats-new.mdx
-
-          # Check if there are staged changes
-          if git diff --cached --quiet; then
-            echo "::error::No changes to commit for whats-new.mdx"
-            exit 1
-          fi
-
-          git status
-
-          # Commit changes
+          git stash
+          git fetch origin main:main --update-head-ok
+          git branch $BRANCH_NAME main
+          git switch $BRANCH_NAME
+          git stash pop
+          git add whats-new.mdx
           git commit -m "docs: update release notes for week of ${DATE}"
-
-          git status
-
-          # Push branch
           git push origin $BRANCH_NAME --force
 
       - uses: actions/create-github-app-token@v1
