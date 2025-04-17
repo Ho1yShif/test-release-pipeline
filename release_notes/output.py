@@ -1,10 +1,9 @@
 import os
 import json
-from typing import Optional
 
 
 def write_summary_and_notes(
-    formatted_summary: str, notes: str, output_dir: str
+    formatted_summary: str, notes: str, output_dir: str, json_output: bool = False
 ) -> None:
     """
     Write the formatted summary and raw notes to files in the specified output directory.
@@ -16,9 +15,10 @@ def write_summary_and_notes(
     notes_path = os.path.join(output_dir, "raw_notes.mdx")
     with open(notes_path, "w", encoding="utf-8") as f:
         f.write(notes)
-    print(
-        f"\nRelease notes written to:\n- {summary_path}\n- {notes_path} for your review"
-    )
+    if not json_output:
+        print(
+            f"\nRelease notes written to:\n- {summary_path}\n- {notes_path} for your review"
+        )
 
 
 def print_json_output(result: dict) -> None:

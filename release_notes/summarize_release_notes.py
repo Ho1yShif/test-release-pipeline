@@ -162,7 +162,9 @@ if __name__ == "__main__":
             result = main()
             if result:
                 notes, formatted_summary = result
-                write_summary_and_notes(formatted_summary, notes, output_dir)
+                write_summary_and_notes(
+                    formatted_summary, notes, output_dir, json_output=json_output
+                )
     except Exception as e:
         import traceback
 
