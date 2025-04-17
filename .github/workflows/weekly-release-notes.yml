@@ -157,6 +157,7 @@ jobs:
       - name: Create branch and update whats-new.mdx
         if: steps.generate_notes.outputs.script_success == 'true'
         run: |
+          set -e
           DATE="${{ steps.generate_notes.outputs.monday_date }}"
           BRANCH_NAME="notes-${DATE}"
 
@@ -187,18 +188,26 @@ jobs:
           # Replace original file
           mv temp_file whats-new.mdx
 
-          # Commit changes
-          git add whats-new.mdx
-          if ! git commit -m "docs: update release notes for week of ${DATE}"; then
-            echo "::error::Failed to commit changes"
+          # Debug: show diff and status before commit
+          echo "git status before commit:"
+          git status
+          echo "git diff before commit:"
+          git diff whats-new.mdx
+
+          # Stage the file (force, in case of .gitignore or other issues)
+          git add -f whats-new.mdx
+
+          # Check if there are staged changes
+          if git diff --cached --quiet; then
+            echo "::error::No changes to commit for whats-new.mdx"
             exit 1
           fi
 
+          # Commit changes
+          git commit -m "docs: update release notes for week of ${DATE}"
+
           # Push branch
-          if ! git push origin $BRANCH_NAME --force; then
-            echo "::error::Failed to push branch"
-            exit 1
-          fi
+          git push origin $BRANCH_NAME --force
 
       - uses: actions/create-github-app-token@v1
         id: app-token
