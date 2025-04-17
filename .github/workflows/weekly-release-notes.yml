@@ -1,7 +1,7 @@
 # We can manually trigger this workflow to generate release notes for the current week via the following steps:
 # 1. Generate release notes using the summarize_release_notes.py script
 # 2. Create a new branch with the current date
-# 3. Add the generated release notes to the top of website/docs/whats-new.mdx
+# 3. Add the generated release notes to the top of whats-new.mdx
 # 4. Create a PR for manual review, tagging @Ho1yShif
 # The workflow can also be triggered manually using the GitHub Actions interface.
 
@@ -76,19 +76,19 @@ jobs:
           API_TIMEOUT_SECONDS: ${{ github.event.inputs.timeout_seconds || '120' }}
         run: |
           # Make the script executable
-          chmod +x website/release_notes/summarize_release_notes.py
+          chmod +x release_notes/summarize_release_notes.py
 
           # Determine the repos input: prioritize workflow input, then fall back to the JSON file
           if [ -n "${{ github.event.inputs.repositories }}" ]; then
             REPOS_PARAM="--repos ${{ github.event.inputs.repositories }}"
             echo "Using repositories from workflow input"
           else
-            REPOS_PARAM="--repos-file website/release_notes/input_repos.json"
+            REPOS_PARAM="--repos-file release_notes/input_repos.json"
             echo "Using repositories from input_repos.json file"
           fi
 
           # Run the script with JSON output and capture the result
-          OUTPUT=$(python website/release_notes/summarize_release_notes.py $REPOS_PARAM --timeout "$API_TIMEOUT_SECONDS" --json-output)
+          OUTPUT=$(python release_notes/summarize_release_notes.py $REPOS_PARAM --timeout "$API_TIMEOUT_SECONDS" --json-output)
 
           # Check for script error
           SCRIPT_EXIT_CODE=$?
@@ -144,8 +144,8 @@ jobs:
       - name: Check if whats-new.mdx exists
         if: steps.generate_notes.outputs.script_success == 'true'
         run: |
-          if [ ! -f website/docs/whats-new.mdx ]; then
-            echo "::error::website/docs/whats-new.mdx file not found"
+          if [ ! -f whats-new.mdx ]; then
+            echo "::error::whats-new.mdx file not found"
             exit 1
           fi
 
@@ -170,7 +170,7 @@ jobs:
           # Create temp file with new content at top
           echo "$FORMATTED_SUMMARY" > temp_file
           echo "" >> temp_file
-          cat website/docs/whats-new.mdx >> temp_file
+          cat whats-new.mdx >> temp_file
 
           # Verify the temp file was created successfully
           if [ ! -s temp_file ]; then
@@ -179,10 +179,10 @@ jobs:
           fi
 
           # Replace original file
-          mv temp_file website/docs/whats-new.mdx
+          mv temp_file whats-new.mdx
 
           # Commit changes
-          git add website/docs/whats-new.mdx
+          git add whats-new.mdx
           if ! git commit -m "docs: update release notes for week of ${DATE}"; then
             echo "::error::Failed to commit changes"
             exit 1
