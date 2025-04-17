@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.1.0...v1.2.0) (2025-04-17)
+
+
+### Features
+
+* refactor all summarization logic ([e1f9ba2](https://github.com/Ho1yShif/test-release-pipeline/commit/e1f9ba22ac590438512626ef5639b9ee8aa151fa))
+* refactor summarization logic ([874ef7a](https://github.com/Ho1yShif/test-release-pipeline/commit/874ef7a2bce21c004abfe6c997d1845e8a912805))
+* update new release workflow ([9c09faf](https://github.com/Ho1yShif/test-release-pipeline/commit/9c09faf800e71cc8bc928b7377e8a0ce18256b55))
+
+
+### Bug Fixes
+
+* correct input repos ([6ae9465](https://github.com/Ho1yShif/test-release-pipeline/commit/6ae9465ece8f8a650499ae8f03fddd66273c3fb3))
+* engineer prompt to include unnecessary info ([da0a3e6](https://github.com/Ho1yShif/test-release-pipeline/commit/da0a3e69ae525931ea6d851489e416d8a4c42e47))
+* improve summarization and argument bugs ([dc2ff98](https://github.com/Ho1yShif/test-release-pipeline/commit/dc2ff981075aa12342a738e877846222c4bb70b8))
+
 ## [1.1.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.0.0...v1.1.0) (2025-04-08)
 
 
