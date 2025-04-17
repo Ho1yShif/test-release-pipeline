@@ -5,6 +5,8 @@
 # 4. Create a PR for manual review, tagging @Ho1yShif
 # The workflow can also be triggered manually using the GitHub Actions interface.
 
+# TODO: Update paths to match the docs repo structure
+
 name: Weekly Release Notes Update
 
 on:
