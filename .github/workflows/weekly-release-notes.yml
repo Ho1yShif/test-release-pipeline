@@ -10,14 +10,27 @@ name: Weekly Release Notes Update
 on:
   workflow_dispatch:
     inputs:
+      year:
+        description: 'Year (YYYY) of date to start collecting releases from'
+        required: true
+        default: '2025'
+      month:
+        description: 'Month (MM) of date to start collecting releases from'
+        required: true
+        default: '01'
+      day:
+        description: 'Day (DD) of date to start collecting releases from'
+        required: true
+        default: '01'
       repositories:
         description: 'Comma-separated list of repositories to fetch release notes from (e.g., "ascend-io/repo1,ascend-io/repo2")'
         required: false
-        default: ''
+        # Update this for Ascend repos
+        default: 'Ho1yShif/test-release-pipeline'
       timeout_seconds:
         description: 'Timeout in seconds for API calls'
         required: false
-        default: '120'
+        default: '45'
 
 jobs:
   weekly-release-notes:
