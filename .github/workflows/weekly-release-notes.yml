@@ -114,6 +114,9 @@ jobs:
           MONDAY_DATE=$(echo "$OUTPUT" | jq -r '.monday_date')
           REPOS_COUNT=$(echo "$OUTPUT" | jq -r '.repositories_count')
 
+          # Write the summary to a file for robust multiline handling
+          echo "$FORMATTED_SUMMARY" > formatted_summary.mdx
+
           if [ -z "$FORMATTED_SUMMARY" ] || [ "$FORMATTED_SUMMARY" == "null" ]; then
             echo "::warning::No formatted summary generated"
             echo "script_success=false" >> $GITHUB_OUTPUT
@@ -127,9 +130,9 @@ jobs:
             exit 1
           fi
 
-          # Store the outputs
+          # Store the outputs using robust multiline output syntax
           echo "formatted_summary<<EOF" >> $GITHUB_OUTPUT
-          echo "$FORMATTED_SUMMARY" >> $GITHUB_OUTPUT
+          cat formatted_summary.mdx >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
           echo "raw_notes<<EOF" >> $GITHUB_OUTPUT
@@ -160,21 +163,19 @@ jobs:
           # Create and checkout new branch
           git checkout -b $BRANCH_NAME
 
-          # Get the formatted summary content
-          FORMATTED_SUMMARY="${{ steps.generate_notes.outputs.formatted_summary }}"
-
-          # Debug: print the summary content
-          echo "FORMATTED_SUMMARY content:"
-          echo "$FORMATTED_SUMMARY"
+          # Debug: print the summary content from file
+          echo "FORMATTED_SUMMARY content from file:"
+          cat formatted_summary.mdx
 
           # Verify the content is not empty
-          if [ -z "$FORMATTED_SUMMARY" ]; then
-            echo "::error::Empty content in formatted summary"
+          if [ ! -s formatted_summary.mdx ]; then
+            echo "::error::Empty content in formatted summary file"
             exit 1
           fi
 
-          # Prepend the summary to whats-new.mdx using printf for robustness
-          printf "%s\n\n" "$FORMATTED_SUMMARY" > temp_file
+          # Prepend the summary to whats-new.mdx using the file
+          cat formatted_summary.mdx > temp_file
+          echo "" >> temp_file
           cat whats-new.mdx >> temp_file
 
           # Verify the temp file was created successfully
