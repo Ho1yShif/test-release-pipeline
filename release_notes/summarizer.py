@@ -53,15 +53,15 @@ def summarize_release(note: str, release_tag: str) -> Tuple[str, str]:
 def get_monday_of_week(date_str: str) -> str:
     """
     Get the Monday of the week for a given date string.
-
+    If the date is a Sunday, return the next day's date (Monday).
     Args:
         date_str (str): Date string in ISO format (e.g. '2024-03-21T10:30:00Z')
-
     Returns:
         str: Date string for Monday of that week in YYYY-MM-DD format
     """
-    # Parse the ISO date string
     date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
-    # Calculate the Monday of that week (weekday() returns 0 for Monday)
-    monday = date - timedelta(days=date.weekday())
+    if date.weekday() == 6:  # Sunday
+        monday = date + timedelta(days=1)
+    else:
+        monday = date - timedelta(days=date.weekday())
     return monday.strftime("%Y-%m-%d")
