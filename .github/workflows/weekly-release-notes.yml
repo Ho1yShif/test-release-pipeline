@@ -1,4 +1,4 @@
-# This workflow runs every Thursday at 7 PM PST to:
+# We can manually trigger this workflow to generate release notes for the current week via the following steps:
 # 1. Generate release notes using the summarize_release_notes.py script
 # 2. Create a new branch with the current date
 # 3. Add the generated release notes to the top of website/docs/whats-new.mdx
@@ -8,8 +8,6 @@
 name: Weekly Release Notes Update
 
 on:
-  schedule:
-    - cron: '0 3 * * FRI'  # Runs at 7 PM PST Thursday (3 AM UTC Friday)
   workflow_dispatch:
     inputs:
       repositories:
