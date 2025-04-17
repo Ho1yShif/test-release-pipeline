@@ -29,17 +29,24 @@ Instructions:
    - Test additions
    - Work in progress (WIP) items
    - Commit hashes
+   - Readability improvements
+   - Code operators
+   - Build stream requests
+   - Svelte or other package warnings
 
-8. When processing entries like "add X workflow to main":
+8. Remove any version or release headers such as '## [1.2.3] (2024-05-01)', '## [v2.0.0]', or similar from the summary. Do not include these in any section or as standalone lines.
+
+9. When processing entries like "add X workflow to main":
    - Keep only the core functionality: "X workflow has been added"
    - REMOVE all branch references like "to main", "from feature", etc.
 
-9. Never add or infer features not explicitly stated in the original notes
+10. Never add or infer features not explicitly stated in the original notes
 
 Sample input:
 ```
 ⚠ BREAKING CHANGES
 update authentication requirement
+## [1.1.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.0.0...v1.1.0) (2025-04-08)
 Features
 add export functionality (d6188e0)
 add release please workflow to main (cb9528c)
