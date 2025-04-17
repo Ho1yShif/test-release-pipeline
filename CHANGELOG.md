@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.1](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.2.0...v1.2.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* adjust get_monday_of_week function to handle Sundays correctly ([f11d67b](https://github.com/Ho1yShif/test-release-pipeline/commit/f11d67bd691b1c94738671f9f87fb86435417d70))
+* **ci:** update paths for release notes files ([#8](https://github.com/Ho1yShif/test-release-pipeline/issues/8)) ([72e9d1e](https://github.com/Ho1yShif/test-release-pipeline/commit/72e9d1e076f5765ff82360e779b2b1190c971c62))
+* improve summary handling in weekly release notes workflow ([88ff604](https://github.com/Ho1yShif/test-release-pipeline/commit/88ff6042da319dcd80872144d603524c8fc798bd))
+* workflow error ([#10](https://github.com/Ho1yShif/test-release-pipeline/issues/10)) ([a930d56](https://github.com/Ho1yShif/test-release-pipeline/commit/a930d56041a3cc43a46d09702354c3eec2e56afe))
+
 ## [1.2.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.1.0...v1.2.0) (2025-04-17)
 
 
