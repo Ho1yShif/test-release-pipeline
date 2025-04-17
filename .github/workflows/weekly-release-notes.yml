@@ -161,15 +161,18 @@ jobs:
           # Get the formatted summary content
           FORMATTED_SUMMARY="${{ steps.generate_notes.outputs.formatted_summary }}"
 
+          # Debug: print the summary content
+          echo "FORMATTED_SUMMARY content:"
+          echo "$FORMATTED_SUMMARY"
+
           # Verify the content is not empty
           if [ -z "$FORMATTED_SUMMARY" ]; then
             echo "::error::Empty content in formatted summary"
             exit 1
           fi
 
-          # Create temp file with new content at top
-          echo "$FORMATTED_SUMMARY" > temp_file
-          echo "" >> temp_file
+          # Prepend the summary to whats-new.mdx using printf for robustness
+          printf "%s\n\n" "$FORMATTED_SUMMARY" > temp_file
           cat whats-new.mdx >> temp_file
 
           # Verify the temp file was created successfully
