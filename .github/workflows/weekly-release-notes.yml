@@ -1,19 +1,39 @@
-# This workflow runs every Thursday at 7 PM PST to:
+# We can manually trigger this workflow to generate release notes for the current week via the following steps:
 # 1. Generate release notes using the summarize_release_notes.py script
 # 2. Create a new branch with the current date
-# 3. Add the generated release notes to the top of whats-new.mdx
+# 3. Add the generated release notes to the top of website/docs/whats-new.mdx
 # 4. Create a PR for manual review, tagging @Ho1yShif
 # The workflow can also be triggered manually using the GitHub Actions interface.
 
 name: Weekly Release Notes Update
 
 on:
-  schedule:
-    - cron: '0 3 * * FRI'  # Runs at 7 PM PST Thursday (3 AM UTC Friday)
-  workflow_dispatch: 
+  workflow_dispatch:
+    inputs:
+      year:
+        description: 'Year (YYYY) of date to start collecting releases from'
+        required: true
+        default: '2025'
+      month:
+        description: 'Month (MM) of date to start collecting releases from'
+        required: true
+        default: '01'
+      day:
+        description: 'Day (DD) of date to start collecting releases from'
+        required: true
+        default: '01'
+      repositories:
+        description: 'Comma-separated list of repositories to fetch release notes from (e.g., "ascend-io/repo1,ascend-io/repo2")'
+        required: false
+        # Update this for Ascend repos
+        default: 'Ho1yShif/test-release-pipeline'
+      timeout_seconds:
+        description: 'Timeout in seconds for API calls'
+        required: false
+        default: '45'
 
 jobs:
-  update-release-notes:
+  weekly-release-notes:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,44 +69,108 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
       - name: Generate release notes
+        id: generate_notes
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_REPO: "ascend-io/test-release-pipeline"
+          API_TIMEOUT_SECONDS: ${{ github.event.inputs.timeout_seconds || '120' }}
         run: |
-          # Run the summarize_release_notes.py script
-          python3 src/summarize_release_notes.py
+          # Make the script executable
+          chmod +x website/release_notes/summarize_release_notes.py
 
-          # Check if the expected .mdx files were created and have content
-          if [ ! -s formatted_summary.mdx ] || [ ! -s raw_notes.mdx ]; then
-            echo "::warning::No release notes generated"
+          # Determine the repos input: prioritize workflow input, then fall back to the JSON file
+          if [ -n "${{ github.event.inputs.repositories }}" ]; then
+            REPOS_PARAM="--repos ${{ github.event.inputs.repositories }}"
+            echo "Using repositories from workflow input"
+          else
+            REPOS_PARAM="--repos-file website/release_notes/input_repos.json"
+            echo "Using repositories from input_repos.json file"
+          fi
+
+          # Run the script with JSON output and capture the result
+          OUTPUT=$(python website/release_notes/summarize_release_notes.py $REPOS_PARAM --timeout "$API_TIMEOUT_SECONDS" --json-output)
+
+          # Check for script error
+          SCRIPT_EXIT_CODE=$?
+          if [ $SCRIPT_EXIT_CODE -ne 0 ]; then
+            echo "::warning::Script execution failed with exit code $SCRIPT_EXIT_CODE"
+            echo "script_success=false" >> $GITHUB_OUTPUT
             exit 1
           fi
 
-          echo "Successfully generated release notes."
+          # Parse the JSON output
+          echo "Parsing script output..."
+          if echo "$OUTPUT" | jq -e 'has("error")' > /dev/null; then
+            ERROR_MSG=$(echo "$OUTPUT" | jq -r '.error')
+            echo "::warning::Error from script: $ERROR_MSG"
+            echo "script_success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          FORMATTED_SUMMARY=$(echo "$OUTPUT" | jq -r '.formatted_summary')
+          RAW_NOTES=$(echo "$OUTPUT" | jq -r '.raw_notes')
+          MONDAY_DATE=$(echo "$OUTPUT" | jq -r '.monday_date')
+          REPOS_COUNT=$(echo "$OUTPUT" | jq -r '.repositories_count')
+
+          if [ -z "$FORMATTED_SUMMARY" ] || [ "$FORMATTED_SUMMARY" == "null" ]; then
+            echo "::warning::No formatted summary generated"
+            echo "script_success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Check if the summary contains actual content
+          if [[ "$FORMATTED_SUMMARY" == *"No release notes"* ]]; then
+            echo "::warning::No meaningful release notes found in any repository"
+            echo "script_success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Store the outputs
+          echo "formatted_summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$FORMATTED_SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "raw_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RAW_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "monday_date=$MONDAY_DATE" >> $GITHUB_OUTPUT
+          echo "repos_count=$REPOS_COUNT" >> $GITHUB_OUTPUT
+          echo "script_success=true" >> $GITHUB_OUTPUT
+
+          # Print a preview for logs
+          echo "Generated release notes summary for week of $MONDAY_DATE from $REPOS_COUNT repositories"
 
       - name: Check if whats-new.mdx exists
+        if: steps.generate_notes.outputs.script_success == 'true'
         run: |
-          if [ ! -f whats-new.mdx ]; then
-            echo "::error::whats-new.mdx file not found"
+          if [ ! -f website/docs/whats-new.mdx ]; then
+            echo "::error::website/docs/whats-new.mdx file not found"
             exit 1
           fi
 
       - name: Create branch and update whats-new.mdx
+        if: steps.generate_notes.outputs.script_success == 'true'
         run: |
-          DATE="${{ steps.set_date.outputs.date }}"
-          BRANCH_NAME="release-notes-update-${DATE}"
+          DATE="${{ steps.generate_notes.outputs.monday_date }}"
+          BRANCH_NAME="notes-${DATE}"
 
           # Create and checkout new branch
           git checkout -b $BRANCH_NAME
 
-          # Read the new content and existing file
-          NEW_CONTENT=$(cat formatted_summary.mdx)
+          # Get the formatted summary content
+          FORMATTED_SUMMARY="${{ steps.generate_notes.outputs.formatted_summary }}"
+
+          # Verify the content is not empty
+          if [ -z "$FORMATTED_SUMMARY" ]; then
+            echo "::error::Empty content in formatted summary"
+            exit 1
+          fi
 
           # Create temp file with new content at top
-          echo "$NEW_CONTENT" > temp_file
+          echo "$FORMATTED_SUMMARY" > temp_file
           echo "" >> temp_file
-          cat whats-new.mdx >> temp_file
+          cat website/docs/whats-new.mdx >> temp_file
 
           # Verify the temp file was created successfully
           if [ ! -s temp_file ]; then
@@ -95,11 +179,11 @@ jobs:
           fi
 
           # Replace original file
-          mv temp_file whats-new.mdx
+          mv temp_file website/docs/whats-new.mdx
 
           # Commit changes
-          git add whats-new.mdx
-          if ! git commit -m "Update release notes for week of ${DATE}"; then
+          git add website/docs/whats-new.mdx
+          if ! git commit -m "docs: update release notes for week of ${DATE}"; then
             echo "::error::Failed to commit changes"
             exit 1
           fi
@@ -112,16 +196,32 @@ jobs:
 
       - uses: actions/create-github-app-token@v1
         id: app-token
+        if: steps.generate_notes.outputs.script_success == 'true'
         with:
           app-id: ${{ secrets.GHA_RELEASE_APP_ID }}
           private-key: ${{ secrets.GHA_RELEASE_PRIVATE_KEY }}
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
+        if: steps.generate_notes.outputs.script_success == 'true'
         with:
           token: ${{ steps.app-token.outputs.token }}
-          title: "📝 Update release notes for week of ${{ steps.set_date.outputs.date }}"
-          body: "Weekly automated release notes update. Please review the changes @Ho1yShif."
-          branch: "release-notes-update-${{ steps.set_date.outputs.date }}"
+          title: "docs: update release notes for week of ${{ steps.generate_notes.outputs.monday_date }}"
+          body: |
+            # Weekly Release Notes Update
+
+            @Ho1yShif Please review these release notes before merging.
+
+            Generated from ${{ steps.generate_notes.outputs.repos_count }} repositories.
+
+            ## 📄 Raw release changelogs for your review
+            <details>
+            <summary>Click to expand raw release notes</summary>
+
+            ```markdown
+            ${{ steps.generate_notes.outputs.raw_notes }}
+            ```
+            </details>
+          branch: "notes-${{ steps.generate_notes.outputs.monday_date }}"
           base: "main"
           reviewers: Ho1yShif

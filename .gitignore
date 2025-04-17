@@ -1,3 +1,8 @@
+# Release notes sample output folder
+review_release_notes/
+
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
