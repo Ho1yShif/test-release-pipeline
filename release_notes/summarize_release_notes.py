@@ -4,6 +4,7 @@ import argparse
 import pathlib
 from datetime import datetime
 from typing import Optional, Tuple
+import logging
 
 from github_fetcher import fetch_release_notes
 from summarizer import summarize_release, get_monday_of_week
@@ -78,6 +79,12 @@ def main() -> Optional[Tuple[str, str]]:
     )
     args = parser.parse_args()
 
+    # Configure logging
+    if args.json_output:
+        logging.basicConfig(level=logging.CRITICAL)
+    else:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     if args.repos_file and os.path.exists(args.repos_file):
         repos = args.repos_file
     elif args.repos:
@@ -99,7 +106,7 @@ def main() -> Optional[Tuple[str, str]]:
             )
             return None
         else:
-            print("No releases with content fetched from any repository.")
+            logging.warning("No releases with content fetched from any repository.")
             return None
 
     most_recent_date = None
@@ -117,8 +124,8 @@ def main() -> Optional[Tuple[str, str]]:
         if body.strip():
             combined_notes += f"\n{body}\n\n"
     if combined_notes:
-        print(f"Collected release notes from {len(repo_releases)} repositories")
-        print("Summarizing combined release notes...")
+        logging.info(f"Collected release notes from {len(repo_releases)} repositories")
+        logging.info("Summarizing combined release notes...")
         all_notes, summary = summarize_release(combined_notes, "Combined Releases")
         monday_date = (
             get_monday_of_week(most_recent_date.strftime("%Y-%m-%dT%H:%M:%SZ"))
@@ -126,7 +133,7 @@ def main() -> Optional[Tuple[str, str]]:
             else datetime.now().strftime("%Y-%m-%d")
         )
         formatted_summary = f"# 🗓️ Week of {monday_date}\n\n{summary}"
-        print(f"Combined Release Summary:\n{formatted_summary}")
+        logging.info(f"Combined Release Summary:\n{formatted_summary}")
         if args.json_output:
             result = {
                 "formatted_summary": formatted_summary,
@@ -142,7 +149,7 @@ def main() -> Optional[Tuple[str, str]]:
             print_json_output({"error": "No release notes found in any repository."})
             return None
         else:
-            print("No release notes found in any repository.")
+            logging.warning("No release notes found in any repository.")
             return None
 
 
@@ -168,5 +175,5 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-        print(f"Error: {str(e)}\n{traceback.format_exc()}", file=sys.stderr)
+        logging.error(f"Error: {str(e)}\n{traceback.format_exc()}")
         sys.exit(1)

@@ -3,6 +3,7 @@ from typing import Any, Optional, Tuple
 from openai import OpenAI
 from prompt import SYSTEM_PROMPT
 import os
+import logging
 
 client: OpenAI = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -45,7 +46,7 @@ def summarize_release(note: str, release_tag: str) -> Tuple[str, str]:
 
         return note, summary
     except Exception as e:
-        print(f"Error obtaining summary from OpenAI: {e}")
+        logging.error(f"Error obtaining summary from OpenAI: {e}")
         return note, "Summary not available."
 
 

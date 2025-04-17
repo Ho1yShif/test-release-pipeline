@@ -1,5 +1,7 @@
 import os
 import json
+import sys
+import logging
 
 
 def write_summary_and_notes(
@@ -16,8 +18,8 @@ def write_summary_and_notes(
     with open(notes_path, "w", encoding="utf-8") as f:
         f.write(notes)
     if not json_output:
-        print(
-            f"\nRelease notes written to:\n- {summary_path}\n- {notes_path} for your review"
+        logging.info(
+            f"Release notes written to: {summary_path}, {notes_path} for your review"
         )
 
 

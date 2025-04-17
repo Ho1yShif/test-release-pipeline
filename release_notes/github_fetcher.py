@@ -4,6 +4,7 @@ import os
 import pathlib
 from typing import List, Dict, Optional, Any, Union
 import sys
+import logging
 
 DEFAULT_REPO = os.getenv("DEFAULT_REPO")
 
@@ -40,7 +41,7 @@ def fetch_release_notes(
             timeout=timeout_seconds,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
-        print(
+        logging.error(
             "Error: GitHub CLI (gh) is not installed or not in PATH. Please install it: https://cli.github.com/"
         )
         sys.exit(1)
@@ -53,7 +54,7 @@ def fetch_release_notes(
             with open(repos, "r") as f:
                 repos = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError) as e:
-            print(f"Error loading repos from JSON file: {e}")
+            logging.error(f"Error loading repos from JSON file: {e}")
             repos = [DEFAULT_REPO]  # Fall back to default
     elif isinstance(repos, str):
         # Single repo string or comma-separated list
@@ -72,12 +73,12 @@ def fetch_release_notes(
             timeout=timeout_seconds,
         )
         if auth_check.returncode != 0:
-            print(
+            logging.warning(
                 "Warning: GitHub CLI authentication issue. You may not be able to access private repositories."
             )
-            print(auth_check.stderr)
+            logging.warning(auth_check.stderr)
     except subprocess.SubprocessError as e:
-        print(f"Warning: Unable to verify GitHub authentication: {e}")
+        logging.warning(f"Warning: Unable to verify GitHub authentication: {e}")
 
     for repo in repos:
         try:
@@ -90,7 +91,7 @@ def fetch_release_notes(
             )
 
             if verify_access.returncode != 0:
-                print(f"""Error: Cannot access repository {repo}. Please check:
+                logging.error(f"""Error: Cannot access repository {repo}. Please check:
 1. You are authenticated with GitHub CLI ('gh auth status')
 2. You have access to this repository
 3. The repository name is correct""")
@@ -113,17 +114,17 @@ def fetch_release_notes(
                 results[repo] = release
 
         except subprocess.TimeoutExpired:
-            print(
+            logging.error(
                 f"Timeout error: GitHub CLI for {repo} exceeded {timeout_seconds} seconds timeout"
             )
         except subprocess.CalledProcessError as e:
-            print(f"Error calling GitHub CLI for {repo}: {e.stderr}")
+            logging.error(f"Error calling GitHub CLI for {repo}: {e.stderr}")
         except Exception as e:
-            print(f"Unexpected error processing {repo}: {e}")
+            logging.error(f"Unexpected error processing {repo}: {e}")
 
     if no_releases_count > 0:
-        print(
-            f"\nSkipped {no_releases_count} out of {total_repos} repositories due to no available releases"
+        logging.warning(
+            f"Skipped {no_releases_count} out of {total_repos} repositories due to no available releases"
         )
 
     return results
