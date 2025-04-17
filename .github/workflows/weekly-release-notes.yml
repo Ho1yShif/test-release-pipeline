@@ -188,10 +188,13 @@ jobs:
           # Replace original file
           mv temp_file whats-new.mdx
 
-          # Debug: show diff and status before commit
-          echo "git status before commit:"
+          # Remove the temporary summary file so it is not committed
+          rm -f formatted_summary.mdx
+
+          # Debug: show directory and file status before commit
+          ls -l
+          ls -l whats-new.mdx
           git status
-          echo "git diff before commit:"
           git diff whats-new.mdx
 
           # Stage the file (force, in case of .gitignore or other issues)
