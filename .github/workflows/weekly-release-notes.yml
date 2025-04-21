@@ -1,9 +1,8 @@
-# We can manually trigger this workflow to generate release notes for the current week via the following steps:
+# Manually trigger this workflow to generate release notes for releases since a specific date via the following steps:
 # 1. Generate release notes using the summarize_release_notes.py script
-# 2. Create a new branch with the current date
+# 2. Create a new branch using the date (Monday of the current week
 # 3. Add the generated release notes to the top of whats-new.mdx
-# 4. Create a PR for manual review, tagging @Ho1yShif
-# The workflow can also be triggered manually using the GitHub Actions interface.
+# 4. Create a PR for manual review to add the updated whats-new.mdx, tagging @Ho1yShif for review
 
 # TODO: Update paths to match the docs repo structure
 
