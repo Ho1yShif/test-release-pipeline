@@ -193,12 +193,8 @@ jobs:
           git switch $BRANCH_NAME
           git stash pop
           git add whats-new.mdx
+          git status
           git commit -m "docs: update release notes for week of ${DATE}"
-          
-          # Print out the current git info about the last commit on the current branch
-          echo "Last commit info on branch $BRANCH_NAME:"
-          git log -1 --pretty=format:"%H - %an, %ar : %s"
-
           git push origin $BRANCH_NAME --force
 
       - uses: actions/create-github-app-token@v1
