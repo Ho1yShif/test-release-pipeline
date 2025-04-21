@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.2.0...v1.3.0) (2025-04-21)
+
+
+### Features
+
+* add debug output for last commit info in weekly release notes workflow ([818e71d](https://github.com/Ho1yShif/test-release-pipeline/commit/818e71dae80608401286475fba38f847d063d6f9))
+
+
+### Bug Fixes
+
+* adjust get_monday_of_week function to handle Sundays correctly ([f11d67b](https://github.com/Ho1yShif/test-release-pipeline/commit/f11d67bd691b1c94738671f9f87fb86435417d70))
+* **ci:** update paths for release notes files ([#8](https://github.com/Ho1yShif/test-release-pipeline/issues/8)) ([72e9d1e](https://github.com/Ho1yShif/test-release-pipeline/commit/72e9d1e076f5765ff82360e779b2b1190c971c62))
+* enhance debug output in weekly release notes workflow ([791c8fb](https://github.com/Ho1yShif/test-release-pipeline/commit/791c8fbc4c47902987c91a59f47de131db51104a))
+* enhance summary handling in weekly release notes workflow ([d78bf99](https://github.com/Ho1yShif/test-release-pipeline/commit/d78bf99753bb5dbafe808e863286b1683e49d6f5))
+* improve commit handling in weekly release notes workflow ([81c6495](https://github.com/Ho1yShif/test-release-pipeline/commit/81c649559e85f2849ee23895fc59d05649c3f243))
+* improve summary handling in weekly release notes workflow ([88ff604](https://github.com/Ho1yShif/test-release-pipeline/commit/88ff6042da319dcd80872144d603524c8fc798bd))
+* remove last commit info output from weekly release notes workflow ([b0386ad](https://github.com/Ho1yShif/test-release-pipeline/commit/b0386adef293be081eecde1e0bc65883834dc763))
+* streamline branch handling in weekly release notes workflow ([1f2aa85](https://github.com/Ho1yShif/test-release-pipeline/commit/1f2aa85bcea934cf9f63b322d46c1a1870da8566))
+* update get_monday_of_week function for accurate date calculation ([24d12d8](https://github.com/Ho1yShif/test-release-pipeline/commit/24d12d8b80c5021abc64c1759364c4bcaf5568f7))
+* workflow error ([#10](https://github.com/Ho1yShif/test-release-pipeline/issues/10)) ([a930d56](https://github.com/Ho1yShif/test-release-pipeline/commit/a930d56041a3cc43a46d09702354c3eec2e56afe))
+
 ## [1.2.0](https://github.com/Ho1yShif/test-release-pipeline/compare/v1.1.0...v1.2.0) (2025-04-17)
 
 
