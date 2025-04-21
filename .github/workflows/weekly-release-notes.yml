@@ -204,27 +204,29 @@ jobs:
           app-id: ${{ secrets.GHA_RELEASE_APP_ID }}
           private-key: ${{ secrets.GHA_RELEASE_PRIVATE_KEY }}
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        if: steps.generate_notes.outputs.script_success == 'true'
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          title: "docs: update release notes for week of ${{ steps.generate_notes.outputs.monday_date }}"
-          body: |
-            # Weekly Release Notes Update
+      - name: Create/Update PR
+        shell: bash
+        run: |
+          TITLE="docs: update release notes for week of ${{ steps.generate_notes.outputs.monday_date }}"
+          BODY="# Weekly Release Notes Update
 
-            @Ho1yShif Please review these release notes before merging.
+          @Ho1yShif Please review these release notes before merging.
 
-            Generated from ${{ steps.generate_notes.outputs.repos_count }} repositories.
+          Generated from ${{ steps.generate_notes.outputs.repos_count }} repositories.
 
-            ## 📄 Raw release changelogs for your review
-            <details>
-            <summary>Click to expand raw release notes</summary>
+          ## 📄 Raw release changelogs for your review
+          <details>
+          <summary>Click to expand raw release notes</summary>
 
-            ```markdown
-            ${{ steps.generate_notes.outputs.raw_notes }}
-            ```
-            </details>
-          branch: "notes-${{ steps.generate_notes.outputs.monday_date }}"
-          base: "main"
-          reviewers: Ho1yShif
+          ```markdown
+          ${{ steps.generate_notes.outputs.raw_notes }}
+          ```
+          </details>"
+          PR_URL="$(gh pr list -B main -H $BRANCH_NAME --state open --json url --jq .[].url)"
+          if [[ -n "${PR_URL}" ]]; then
+              echo "Editing existing PR @ ${PR_URL}"
+              gh pr edit $PR_URL --title "$TITLE" --body "$BODY"
+          else
+              echo "Creating new PR"
+              gh pr create -B main -H $BRANCH_NAME --title "$TITLE" --body "$BODY"
+          fi
