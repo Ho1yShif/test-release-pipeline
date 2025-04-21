@@ -113,6 +113,12 @@ jobs:
           RAW_NOTES=$(echo "$OUTPUT" | jq -r '.raw_notes')
           MONDAY_DATE=$(echo "$OUTPUT" | jq -r '.monday_date')
           REPOS_COUNT=$(echo "$OUTPUT" | jq -r '.repositories_count')
+          BRANCH_NAME="notes-${MONDAY_DATE}"
+
+          # Create a branch to contain the new release notes
+          git fetch origin main:main --update-head-ok
+          git branch $BRANCH_NAME main
+          git switch $BRANCH_NAME
 
           # Write the summary to a file for robust multiline handling
           echo "$FORMATTED_SUMMARY" > formatted_summary.mdx
@@ -158,8 +164,6 @@ jobs:
         if: steps.generate_notes.outputs.script_success == 'true'
         run: |
           set -e
-          DATE="${{ steps.generate_notes.outputs.monday_date }}"
-          BRANCH_NAME="notes-${DATE}"
 
           # Debug: print the summary content from file
           echo "FORMATTED_SUMMARY content from file:"
@@ -187,16 +191,6 @@ jobs:
 
           git diff whats-new.mdx
 
-          git stash
-          git fetch origin main:main --update-head-ok
-          git branch $BRANCH_NAME main
-          git switch $BRANCH_NAME
-          git stash pop
-          git add whats-new.mdx
-          git status
-          git commit -m "docs: update release notes for week of ${DATE}"
-          git push origin $BRANCH_NAME --force
-
       - uses: actions/create-github-app-token@v1
         id: app-token
         if: steps.generate_notes.outputs.script_success == 'true'
@@ -204,29 +198,29 @@ jobs:
           app-id: ${{ secrets.GHA_RELEASE_APP_ID }}
           private-key: ${{ secrets.GHA_RELEASE_PRIVATE_KEY }}
 
-      - name: Create/Update PR
-        shell: bash
-        run: |
-          TITLE="docs: update release notes for week of ${{ steps.generate_notes.outputs.monday_date }}"
-          BODY="# Weekly Release Notes Update
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        if: steps.generate_notes.outputs.script_success == 'true'
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          add-paths: "whats-new.mdx"
+          commit-message: "docs: update release notes for week of ${{ steps.generate_notes.outputs.monday_date }}"
+          title: "docs: update release notes for week of ${{ steps.generate_notes.outputs.monday_date }}"
+          body: |
+            # Weekly Release Notes Update
 
-          @Ho1yShif Please review these release notes before merging.
+            @Ho1yShif Please review these release notes before merging.
 
-          Generated from ${{ steps.generate_notes.outputs.repos_count }} repositories.
+            Generated from ${{ steps.generate_notes.outputs.repos_count }} repositories.
 
-          ## 📄 Raw release changelogs for your review
-          <details>
-          <summary>Click to expand raw release notes</summary>
+            ## 📄 Raw release changelogs for your review
+            <details>
+            <summary>Click to expand raw release notes</summary>
 
-          ```markdown
-          ${{ steps.generate_notes.outputs.raw_notes }}
-          ```
-          </details>"
-          PR_URL="$(gh pr list -B main -H $BRANCH_NAME --state open --json url --jq .[].url)"
-          if [[ -n "${PR_URL}" ]]; then
-              echo "Editing existing PR @ ${PR_URL}"
-              gh pr edit $PR_URL --title "$TITLE" --body "$BODY"
-          else
-              echo "Creating new PR"
-              gh pr create -B main -H $BRANCH_NAME --title "$TITLE" --body "$BODY"
-          fi
+            ```markdown
+            ${{ steps.generate_notes.outputs.raw_notes }}
+            ```
+            </details>
+          branch: "notes-${{ steps.generate_notes.outputs.monday_date }}"
+          base: "main"
+          reviewers: Ho1yShif
